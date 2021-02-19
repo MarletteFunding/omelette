@@ -1,0 +1,244 @@
+service: datateam-card-payments-pipeline
+
+plugins:
+  - serverless-python-requirements
+
+provider:
+  name: aws
+  runtime: python3.8
+  ####################### START REQUIRED ######################################
+  variableSyntax: "\\${((?!AWS)[ ~:a-zA-Z0-9._@'\",\\-\\/\\(\\)]+?)}" # This is needed to help make CloudFormation a bit more readable https://serverless.com/framework/docs/providers/aws/guide/variables/#using-custom-variable-syntax
+  ####################### END REQUIRED ########################################
+  stage: ${opt:stage, 'sbx'}
+  region: us-east-1
+  deploymentBucket:
+    name: mf-serverless
+  environment:
+    ENV: ${self:custom.env.${self:provider.stage}}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - logs:CreateLogGroup
+        - logs:CreateLogStream
+      Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${self:service}-${self:provider.stage}*:*
+    - Effect: Allow
+      Action:
+        - logs:PutLogEvents
+      Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/${self:service}-${self:provider.stage}*:*:*
+    - Effect: Allow
+      Action:
+        - logs:CreateLogGroup
+        - logs:CreateLogStream
+      Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/ecs/${self:service}-${self:provider.stage}*:*
+    - Effect: Allow
+      Action:
+        - logs:PutLogEvents
+      Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/ecs/${self:service}-${self:provider.stage}*:*:*
+    - Effect: Allow
+      Action:
+        - lambda:InvokeFunction
+      Resource:
+        - !Sub arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:${self:service}-${self:provider.stage}-sftp-to-s3
+    - Effect: Allow
+      Action:
+        - s3:getObject
+        - s3:putObject
+      Resource:
+        - arn:aws:s3:::card-payments-wf-raw-${self:provider.stage}/*
+        - arn:aws:s3:::card-payments-deluxe-raw-${self:provider.stage}/*
+    - Effect: Allow
+      Action:
+        - s3:ListBucket
+      Resource:
+        - arn:aws:s3:::card-payments-wf-raw-${self:provider.stage}
+        - arn:aws:s3:::card-payments-deluxe-raw-${self:provider.stage}
+    - Effect: Allow
+      Action:
+        - iam:PassRole
+      Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/${self:service}-${self:provider.stage}-${AWS::Region}-cardPaymentsPipeRole
+    - Effect: Allow
+      Action:
+        - ssm:GetParameter
+      Resource:
+        - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${self:provider.stage}/card/*
+        - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/etl/*
+    - Effect: Allow
+      Action:
+        - kms:Encrypt
+        - kms:Decrypt
+        - kms:GenerateDataKey
+      Resource: !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/*
+    - Effect: Allow
+      Action:
+        - kms:Encrypt
+        - kms:Decrypt
+        - kms:GenerateDataKey
+      Resource: !Sub arn:aws:kms:${AWS::Region}:${AWS::AccountId}:key/${self:custom.kmsKeyId.${self:provider.stage}}
+
+custom:
+  env:
+    sbx: sbx.ini
+    pci-uat: uat.ini
+    pci-prd: prd.ini
+  vpcId:
+    sbx: vpc-1232af69
+    pci-uat: vpc-0b8ce32032fee2450
+    pci-prd: vpc-05061c72e343819b1
+  subnets:
+    sbx:
+      - subnet-831cd2c9
+      - subnet-cdaf9590
+      - subnet-10aeb074
+    pci-uat:
+      - subnet-057040591b068e8c3
+      - subnet-0ffae877bd4f137e6
+    pci-prd:
+      - subnet-079279d9c9e354830
+      - subnet-0b24a153af714f4f4
+  securityGroups:
+    sbx:
+      - sg-cc3d03ba
+    pci-uat:
+      - sg-08ad8db8d7f70758b
+    pci-prd:
+      - sg-070903321fda83d55
+  scheduleEnabled:
+    sbx: false
+    pci-uat: false
+    pci-prd: false
+  kmsKeyId:
+    sbx: 149c0205-119c-4b0b-a58e-51e0a513789e
+    pci-uat: c67c5265-8446-428e-97d9-b459e10dcb06
+    pci-prd: ebee6463-1e2b-41eb-a6ac-b4c49db323fe
+  pythonRequirements:
+    dockerizePip: true
+    usePoetry: false
+
+package:
+  individually: true
+
+functions:
+  sftp-to-s3:
+    handler: src/handler.handle
+    module: lambda/sftp_to_s3
+    package:
+      include:
+        - lambda/sftp_to_s3/**
+    events:
+      - schedule:
+          rate: cron(0 * * * ? *)
+          enabled: ${self:custom.scheduleEnabled.${self:provider.stage}}
+    timeout: 900
+    memorySize: 1024
+    vpc:
+      securityGroupIds: ${self:custom.securityGroups.${self:provider.stage}}
+      subnetIds: ${self:custom.subnets.${self:provider.stage}}
+
+resources:
+  Resources:
+    WellsFargoBucket:
+      Type: AWS::S3::Bucket
+      DeletionPolicy: Retain
+      Properties:
+        BucketName: card-payments-wf-raw-${self:provider.stage}
+        AccessControl: Private
+        BucketEncryption:
+          ServerSideEncryptionConfiguration:
+            - BucketKeyEnabled: true
+              ServerSideEncryptionByDefault:
+                SSEAlgorithm: 'aws:kms'
+                KMSMasterKeyID: ${self:custom.kmsKeyId.${self:provider.stage}}
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+    DeluxeBucket:
+      Type: AWS::S3::Bucket
+      DeletionPolicy: Retain
+      Properties:
+        BucketName: card-payments-deluxe-raw-${self:provider.stage}
+        AccessControl: Private
+        BucketEncryption:
+          ServerSideEncryptionConfiguration:
+            - BucketKeyEnabled: true
+              ServerSideEncryptionByDefault:
+                SSEAlgorithm: 'aws:kms'
+                KMSMasterKeyID: ${self:custom.kmsKeyId.${self:provider.stage}}
+        PublicAccessBlockConfiguration:
+          BlockPublicAcls: true
+          BlockPublicPolicy: true
+          IgnorePublicAcls: true
+          RestrictPublicBuckets: true
+    SSMMySqlUsername:
+      Type: AWS::SSM::Parameter
+      Properties:
+        Name: /${self:provider.stage}/card/payments-pipeline/mysql/username
+        Type: String
+        Value: tbd
+    SSMMySqlPassword:
+      Type: AWS::SSM::Parameter
+      Properties:
+        Name: /${self:provider.stage}/card/payments-pipeline/mysql/password
+        Type: String
+        Value: tbd
+    SSMWfSftpPrivateKey:
+      Type: AWS::SSM::Parameter
+      Properties:
+        Name: /${self:provider.stage}/card/payments-pipeline/sftp/wf/private-key
+        Type: String
+        Value: tbd
+    SSMWfSftpPassphrase:
+      Type: AWS::SSM::Parameter
+      Properties:
+        Name: /${self:provider.stage}/card/payments-pipeline/sftp/wf/private-key-passphrase
+        Type: String
+        Value: tbd
+    SSMWfSftpFingerprint:
+      Type: AWS::SSM::Parameter
+      Properties:
+        Name: /${self:provider.stage}/card/payments-pipeline/sftp/wf/fingerprint
+        Type: String
+        Value: tbd
+    SSMWfPgpPrivateKey:
+      Type: AWS::SSM::Parameter
+      Properties:
+        Name: /${self:provider.stage}/card/payments-pipeline/pgp/wf/private-key
+        Type: String
+        Value: tbd
+    SSMWfPgpPassphrase:
+      Type: AWS::SSM::Parameter
+      Properties:
+        Name: /${self:provider.stage}/card/payments-pipeline/pgp/wf/passphrase
+        Type: String
+        Value: tbd
+    SSMDeluxeSftpPrivateKey:
+      Type: AWS::SSM::Parameter
+      Properties:
+        Name: /${self:provider.stage}/card/payments-pipeline/sftp/deluxe/private-key
+        Type: String
+        Value: tbd
+    SSMDeluxeSftpPassphrase:
+      Type: AWS::SSM::Parameter
+      Properties:
+        Name: /${self:provider.stage}/card/payments-pipeline/sftp/deluxe/private-key-passphrase
+        Type: String
+        Value: tbd
+    SSMDeluxeSftpFingerprint:
+      Type: AWS::SSM::Parameter
+      Properties:
+        Name: /${self:provider.stage}/card/payments-pipeline/sftp/deluxe/fingerprint
+        Type: String
+        Value: tbd
+    SSMDeluxePgpPrivateKey:
+      Type: AWS::SSM::Parameter
+      Properties:
+        Name: /${self:provider.stage}/card/payments-pipeline/pgp/deluxe/private-key
+        Type: String
+        Value: tbd
+    SSMDeluxePgpPassphrase:
+      Type: AWS::SSM::Parameter
+      Properties:
+        Name: /${self:provider.stage}/card/payments-pipeline/pgp/deluxe/passphrase
+        Type: String
+        Value: tbd
