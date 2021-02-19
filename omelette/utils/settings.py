@@ -14,8 +14,11 @@ logger = logging.getLogger(__name__)
 
 class Settings:
     """Settings class that can be accessed using either dict notation (settings.get('abc')) or
-    dot notation (settings.snowflake.password). Reads from toml file and requires a table/section called 'default', along with
-    a table/section for each environment, e.g. [local], [sbx], [prd]. Supports nested tables with dot notation, e.g. [local.snowflake]
+    dot notation (settings.snowflake.password). Reads from toml file and requires a table/section
+    called 'default', along with a table/section for each environment, e.g. [local], [sbx], [prd].
+    Supports nested tables with dot notation, e.g. [local.snowflake].
+
+    Inspired by ConfigParser and dot notation implementation borrowed from DynaConf
     """
 
     TOML_TO_BUILTIN_MAP = {
@@ -27,7 +30,7 @@ class Settings:
 
     INTERNAL_ATTRS = ["_store", "_ssm"]
 
-    def __init__(self, config_filepath: str = "settings.toml", env: str = os.getenv("ENV")):
+    def __init__(self, config_filepath: str = "settings.toml", env: str = os.getenv("PROJECT_ENV", "local")):
         self._store = Box()
         self._ssm = boto3.client("ssm", region_name="us-east-1")
 
