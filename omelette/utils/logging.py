@@ -32,7 +32,7 @@ def init_logging(*, env: str = os.getenv("PROJECT_ENV", "local"), root_level: Op
                 'propagate': False
             }
 
-    if is_lambda:
+    if is_lambda and env != "local":
         # Lambda runtime controls logging and sets handler, so we only need to set level.
         logging.getLogger().setLevel(log_level)
     else:

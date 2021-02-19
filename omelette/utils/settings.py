@@ -62,6 +62,8 @@ class Settings:
         elif isinstance(value, dict):
             for k, v in value.items():
                 self._set_value_from_config(k, v, name)
+        elif isinstance(value, int) or isinstance(value, float):
+            self.set_attr(name, value, parent)
         elif value.startswith("${") and value.endswith("}"):
             # Expecting environment variable with the value between ${}
             var_name = re.findall(r'\${(.*?)}', value)[0]
@@ -83,7 +85,7 @@ class Settings:
         else:
             self.set_attr(name, value, parent)
 
-    def set_attr(self, name: str, value: str, parent: str = None):
+    def set_attr(self, name: str, value: Any, parent: str = None):
         if type(value) in self.TOML_TO_BUILTIN_MAP:
             value = self.TOML_TO_BUILTIN_MAP[type(value)](value)
 
