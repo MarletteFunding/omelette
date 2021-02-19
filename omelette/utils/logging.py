@@ -3,8 +3,9 @@ import os
 from typing import Optional, Dict
 
 
-def init_logging(*, env: str = os.getenv("PROJECT_ENV", "local"), root_level: Optional[str] = None, disable_existing_loggers: bool = False,
-                 loggers: Optional[Dict[str, str]] = None, is_lambda: bool = False):
+def init_logging(*, env: str = os.getenv("PROJECT_ENV", "local"), root_level: Optional[str] = os.getenv("ROOT_LOG_LEVEL"),
+                 disable_existing_loggers: bool = False, loggers: Optional[Dict[str, str]] = None,
+                 is_lambda: bool = False):
     config = LOGGING_CONFIG
     if disable_existing_loggers:
         config["disable_existing_loggers"] = True
