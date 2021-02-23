@@ -112,7 +112,7 @@ def recipe_arg(*names, **outer_kwargs):
     Recipe().add_argument(*names, **outer_kwargs)
 
     def wrapper(func, *args, **kwargs):
-        return func(*args, **kwargs)
+        return func
     return wrapper
 
 
