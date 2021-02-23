@@ -58,19 +58,30 @@ class Settings:
         if name.upper() in os.environ and not parent:
             self.set_attr(name, os.getenv(name.upper()), parent)
         elif parent and f"{parent.upper()}_{name.upper()}" in os.environ:
-            self.set_attr(name, os.getenv(f"{parent.upper()}_{name.upper()}"), parent)
+            attr = os.getenv(f"{parent.upper()}_{name.upper()}")
+            try:
+                if type(value) in self.TOML_TO_BUILTIN_MAP:
+                    attr = self.TOML_TO_BUILTIN_MAP[type(value)](attr)
+                elif type(value) == bool:
+                    attr = attr.lower() == "true"
+                else:
+                    attr = type(value)(attr)
+            except TypeError:
+                logger.info(f"Could not cast setting {parent}.{name} with value {attr} to type {type(value)}")
+                pass
+            self.set_attr(name, attr, parent)
         elif isinstance(value, dict):
             for k, v in value.items():
                 self._set_value_from_config(k, v, name)
         elif isinstance(value, int) or isinstance(value, float):
             self.set_attr(name, value, parent)
-        elif value.startswith("${") and value.endswith("}"):
+        elif isinstance(value, str) and value.startswith("${") and value.endswith("}"):
             # Expecting environment variable with the value between ${}
             var_name = re.findall(r'\${(.*?)}', value)[0]
 
             if var_name in os.environ:
                 self.set_attr(name, os.getenv(var_name), parent)
-        elif value.startswith("ssm:"):
+        elif isinstance(value, str) and value.startswith("ssm:"):
             try:
                 param = self._ssm.get_parameter(
                     Name=value.replace("ssm:", ""),

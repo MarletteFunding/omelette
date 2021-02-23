@@ -246,4 +246,3 @@ Serverless.yml is the master container for all deployment artifacts, but we pack
 with each recipe so that code + infrastructure are close together and always easy to find. It makes it easier to modify deployment
 settings too when each recipe is isolated. 
 
-

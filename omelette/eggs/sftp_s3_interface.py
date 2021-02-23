@@ -26,9 +26,7 @@ class SftpS3Interface:
 
         try:
             self.sftp_conn.get(f"{sftp_directory}/{filename}", download_file_path)
-
-            if self.s3_client.enabled:
-                self.s3_client.upload_file(download_file_path, s3_bucket, s3_key)
+            self.s3_client.upload_file(download_file_path, s3_bucket, s3_key)
         except Exception as e:
             logger.error(f"Error transferring file {filename}: {e}.")
             raise TransferException(e)

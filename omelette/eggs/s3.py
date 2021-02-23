@@ -15,9 +15,8 @@ class S3UploadError(Exception):
 class S3:
     """Wrapper around boto3 S3 client. Provides more robust retry logic."""
 
-    def __init__(self, enabled: bool = False):
+    def __init__(self):
         self.client = boto3.client("s3")
-        self.enabled = enabled
 
     def download_file(self, bucket: str, key: str, download_path: str, retry_count: int = 3) -> str:
         """Downloads existing file from S3."""
