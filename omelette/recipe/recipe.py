@@ -60,7 +60,7 @@ class Recipe:
         pass
 
 
-def recipe(func=None, *, slack_alert: bool = False):
+def recipe(func=None, *, slack_alert: bool = False, slack_message_text: str = None):
     """
     Decorator for the entrypoint callable in non-class-based workflows, e.g. plain Python functions. An alternative to
     sub-classing Recipe. Adds requirement for --job-name/-j argument, and will pass the Recipe context with
@@ -78,7 +78,7 @@ def recipe(func=None, *, slack_alert: bool = False):
         main()
     """
     if func is None:
-        return partial(recipe, slack_alert=slack_alert)
+        return partial(recipe, slack_alert=slack_alert, slack_message_text=slack_message_text)
 
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -100,7 +100,8 @@ def recipe(func=None, *, slack_alert: bool = False):
             try:
                 return func(context, *args, **kwargs)
             except Exception as e:
-                slack.send_slack_alert(f"Error running Snowflake to SFTP for {job_name}: {e}")
+                msg = slack_message_text or f"Omelette: Error running recipe {context.settings.slack.app_name}"
+                slack.send_slack_alert(f"{msg}: {e}")
                 raise e
         else:
             return func(context, *args, **kwargs)
@@ -115,7 +116,7 @@ def recipe_arg(*names, **outer_kwargs):
     return wrapper
 
 
-def step(func):
+def step(func=None, *, slack_alert: bool = False, slack_message_text: str = None):
     """
     Decorator for wrapping any plain ol' Python functions that need access to shared context from Recipe. Avoids having
     to pass context down tree of child functions.
@@ -133,7 +134,20 @@ def step(func):
     if __name__ == "__main__":
         main()
     """
+    if func is None:
+        return partial(step, slack_alert=slack_alert, slack_message_text=slack_message_text)
 
+    @wraps(func)
     def wrapper(*args, **kwargs):
-        return func(Recipe._instance, *args, **kwargs)
+        context = Recipe._instance
+        if slack_alert and context.settings.slack.api_token:
+            slack = Slack(**context.settings.slack)
+            try:
+                return func(context, *args, **kwargs)
+            except Exception as e:
+                msg = slack_message_text or f"Omelette: Error running step {context.settings.slack.app_name}"
+                slack.send_slack_alert(f"{msg}: {e}")
+                raise e
+        else:
+            return func(context, *args, **kwargs)
     return wrapper

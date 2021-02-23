@@ -1,8 +1,10 @@
+from functools import wraps, partial
 import inspect
 import os
 from typing import Any, Dict, Callable, Optional
 
 from omelette import Settings, init_logging
+from omelette.eggs import Slack
 from omelette.recipe import Recipe
 
 
@@ -41,11 +43,13 @@ class LambdaRecipe(Recipe):
         return self
 
 
-def recipe(func):
+def recipe(func=None, *, slack_alert: bool = False, slack_message_text: str = None):
     """
     Decorator for the entrypoint callable in non-class-based AWS Lambda workflows, e.g. plain Python functions.
     An alternative to sub-classing LambdaRecipe. Requires input variable "job_name" to be present in Lambda event.
-    Will pass the LambdaRecipe context, along with the AWS Lambda event & context to the wrapped function.
+    Will pass the LambdaRecipe context, along with the AWS Lambda event & context to the wrapped function. Optional
+    try/except that will send a slack alert, controlled by parameter `slack_alert`. Can be used with or without
+    call using (), e.g. @recipe will work and so will @recipe() or @recipe(slack_alert=True).
 
     Example:
 
@@ -58,14 +62,27 @@ def recipe(func):
 
     In AWS Lambda, handler would be set to `main` as it accepts the passed event and context objects due to this decorator.
     """
+    if func is None:
+        return partial(recipe, slack_alert=slack_alert, slack_message_text=slack_message_text)
 
+    @wraps(func)
     def wrapper(*args, **kwargs):
         context = LambdaRecipe(func)(*args, **kwargs)
-        return func(context, *args)
+
+        if slack_alert and context.settings.slack.api_token:
+            slack = Slack(**context.settings.slack)
+            try:
+                return func(context, *args)
+            except Exception as e:
+                msg = slack_message_text or f"Omelette: Error running recipe {context.settings.slack.app_name}"
+                slack.send_slack_alert(f"{msg}: {e}")
+                raise e
+        else:
+            return func(context, *args)
     return wrapper
 
 
-def step(func):
+def step(func=None, *, slack_alert: bool = False, slack_message_text: str = None):
     """
     Decorator for wrapping any plain ol' Python functions that need access to shared context from Recipe. Avoids having
     to pass context down tree of child functions.
@@ -83,7 +100,21 @@ def step(func):
     if __name__ == "__main__":
         main()
     """
+    if func is None:
+        return partial(step, slack_alert=slack_alert, slack_message_text=slack_message_text)
 
+    @wraps(func)
     def wrapper(*args, **kwargs):
-        return func(LambdaRecipe._instance, *args, **kwargs)
+        context = LambdaRecipe._instance
+
+        if slack_alert and context.settings.slack.api_token:
+            slack = Slack(**context.settings.slack)
+            try:
+                return func(context, *args, **kwargs)
+            except Exception as e:
+                msg = slack_message_text or f"Omelette: Error running step {context.settings.slack.app_name}"
+                slack.send_slack_alert(f"{msg}: {e}")
+                raise e
+        else:
+            return func(context, *args, **kwargs)
     return wrapper
