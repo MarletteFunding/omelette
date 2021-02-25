@@ -2,12 +2,14 @@ import argparse
 import atexit
 import inspect
 import logging
-from functools import wraps, partial
 import os
 import sys
+from functools import wraps, partial
+from importlib import import_module
 from typing import Any, Dict, Callable, Optional
 
-from omelette import Settings, settings, init_logging
+from omelette.core.settings import Settings, settings
+from omelette.core.logging import init_logging
 from omelette.eggs import Slack
 
 logger = logging.getLogger(__name__)
@@ -25,6 +27,7 @@ class Recipe:
         self.settings: Settings = settings
         self.job_name: Optional[str] = None
         self.job_dir: Optional[str] = None
+        self.job_module: Optional[str] = None
         self.args: Optional[argparse.Namespace] = None
         self.lambda_event: Optional[Dict[Any, Any]] = None
         self.lambda_context: Optional[Dict[Any, Any]] = None
@@ -97,6 +100,9 @@ class Recipe:
 
         self.settings.load(config_filepath=self.job_dir + "settings.toml")
         init_logging(is_lambda=self.is_lambda)
+
+        if os.path.exists(self.job_dir + f"{job_name}.py"):
+            self.job_module = import_module(f".{job_name}.{job_name}", "jobs")
 
         return self
 
@@ -210,23 +216,27 @@ def step(func=None, *, max_retries: int = None, slack_alert: bool = False, slack
 
     @wraps(func)
     def wrapper(*args, **kwargs):
-        _recipe = context
-        if slack_alert and _recipe.settings.slack.api_token:
-            slack = Slack(**_recipe.settings.slack)
+        _func = func
+
+        if hasattr(context.job_module, func.__name__):
+            _func = getattr(context.job_module, func.__name__)
+
+        if slack_alert and context.settings.slack.api_token:
+            slack = Slack(**context.settings.slack)
             try:
                 if max_retries:
-                    return retry(func, max_retries, _recipe, *args, **kwargs)
+                    return retry(_func, max_retries, *args, **kwargs)
                 else:
-                    return func(_recipe, *args, **kwargs)
+                    return _func(*args, **kwargs)
             except Exception as e:
                 msg = slack_message_text or f"Omelette: Error running step {context.settings.slack.app_name}"
                 slack.send_slack_alert(f"{msg}: {e}")
                 raise e
         else:
             if max_retries:
-                return retry(func, max_retries, _recipe, *args, **kwargs)
+                return retry(_func, max_retries, *args, **kwargs)
             else:
-                return func(_recipe, *args, **kwargs)
+                return _func(*args, **kwargs)
     return wrapper
 
 
