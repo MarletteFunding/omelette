@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Union, cast
 
 from slack import WebClient
 from slack.errors import SlackApiError
@@ -18,18 +18,29 @@ class Slack:
         self.environment = os.getenv("PROJECT_ENV", "local")
         self.enabled = enabled
 
-    def send_slack_alert(self, message: str, app_name: str = None, job_owner_id: str = None):
+    def send_slack_alert(self, message: Union[str, Exception], app_name: str = None, job_owner_id: str = None):
         if not self.enabled:
             logger.info("Trying to send message to Slack but it is not enabled.")
             return
 
         app_name = app_name or self.app_name
 
+        fields = []
+
+        if isinstance(message, Exception):
+            value = f"```{repr(message)}```"
+        else:
+            value = cast(str, message)
+        if value is not None:
+            fields.append({"title": "Message", "value": value, "short": False})
+
         attachment = {
-            "pretext": f"*Alert from `{self.environment.upper()} {app_name}` Job*",
-            "mrkdwn_in": ["text", "pretext"],
-            "color": "danger",
-            "text": message
+            "fallback": "Job Failure Notification",
+            "color": "#eb0000",
+            "title": f"Failed",
+            "fields": fields,
+            "text": f"*{self.environment.title()} `{app_name}`* is now in a Failed state",
+            "footer": "Omelette notification",
         }
 
         # Send to default channel

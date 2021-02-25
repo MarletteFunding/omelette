@@ -28,20 +28,24 @@ class Settings:
         items.Float: float,
     }
 
-    INTERNAL_ATTRS = ["_store", "_ssm"]
+    INTERNAL_ATTRS = ["_store", "_ssm", "env"]
 
-    def __init__(self, config_filepath: str = "settings.toml", env: str = os.getenv("PROJECT_ENV", "local")):
+    def __init__(self, config_filepath: str = None, env: str = os.getenv("PROJECT_ENV", "local")):
         self._store = Box()
+        self.env = env
         self._ssm = boto3.client("ssm", region_name="us-east-1")
 
         # Load from .env file if exists. Will set env variables for use in .ini files.
         load_dotenv(find_dotenv(usecwd=True), verbose=True)
 
-        self.read(config_filepath, env)
+        if config_filepath:
+            self.load(config_filepath)
 
-    def read(self, config_filepath: str, env: str):
+    def load(self, config_filepath: str):
         if not os.path.exists(config_filepath):
             raise OSError("Could not load the default or provided settings file.")
+
+        self.clear()
 
         with open(config_filepath, "r") as f:
             settings_data = parse(f.read())
@@ -50,9 +54,12 @@ class Settings:
             raise Exception("Settings file missing required section 'default'")
 
         for table, items in settings_data.items():
-            if table.startswith(env) or table == "default":
+            if table.startswith(self.env) or table == "default":
                 for k, v in items.items():
                     self._set_value_from_config(k, v)
+
+    def clear(self):
+        self._store = Box()
 
     def _set_value_from_config(self, name: str, value: Any, parent: str = None):
         if name.upper() in os.environ and not parent:
@@ -120,6 +127,8 @@ class Settings:
 
     def __getattr__(self, name):
         """Allow getting keys from self._store using dot notation"""
+        if name in self.INTERNAL_ATTRS:
+            return super(Settings, self).__getattribute__(name)
         value = getattr(self._store, name)
         return value
 
@@ -160,3 +169,6 @@ class Settings:
     def values(self):
         """Redirects to store object"""
         return self._store.values()
+
+
+settings = Settings()
