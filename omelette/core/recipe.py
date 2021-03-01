@@ -31,6 +31,7 @@ class Recipe:
         self.args: Optional[argparse.Namespace] = None
         self.lambda_event: Optional[Dict[Any, Any]] = None
         self.lambda_context: Optional[Dict[Any, Any]] = None
+        self.logger: Optional[logging.Logger] = None
 
         if type(self) is not Recipe and not self.is_lambda:
             file_dir = os.path.dirname(sys.argv[0])
@@ -100,6 +101,7 @@ class Recipe:
 
         self.settings.load(config_filepath=self.job_dir + "settings.toml")
         init_logging(is_lambda=self.is_lambda)
+        self.logger = logging.getLogger("__main__")
 
         if os.path.exists(self.job_dir + f"{job_name}.py"):
             self.job_module = import_module(f".{job_name}.{job_name}", "jobs")

@@ -1,0 +1,26 @@
+[default]
+example = "test"
+
+    [default.slack]
+    app_name = "Test App"
+    api_token = "ssm:/etl/slack-api-token"
+
+[local]
+    [local.slack]
+    channel_id = "C123X45FXKM"
+    enabled = false
+
+[sbx]
+    [sbx.slack]
+    channel_id = "C123X45FXKM"
+    enabled = true
+
+[uat]
+    [uat.slack]
+    channel_id = "C123X45FXKM"
+    enabled = true
+
+[prd]
+    [prd.slack]
+    channel_id = "C678X90FXKM"
+    enabled = true
