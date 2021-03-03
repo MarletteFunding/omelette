@@ -1,3 +1,5 @@
+from typing import Optional
+
 import gnupg
 import logging
 
@@ -16,9 +18,10 @@ class Files:
             return f.read()
 
     @classmethod
-    def decrypt_pgp(cls, input_filepath: str, output_filepath: str, private_key: str, passphrase: str) -> str:
+    def decrypt_pgp(cls, input_filepath: str, output_filepath: str, private_key: str, passphrase: str,
+                    homedir: Optional[str] = None, binary_path: Optional[str] = 'gpg') -> str:
         """Decrypt PGP file using private key and passphrase."""
-        gpg = gnupg.GPG()
+        gpg = gnupg.GPG(gpgbinary=binary_path, gnupghome=homedir)
         gpg.import_keys(private_key)
 
         with open(input_filepath, "rb") as encrypted_f:
@@ -34,9 +37,10 @@ class Files:
                 raise FileDecryptError(result.stderr)
 
     @classmethod
-    def encrypt_pgp(cls, input_filepath: str, output_filepath: str, public_key: str) -> str:
+    def encrypt_pgp(cls, input_filepath: str, output_filepath: str, public_key: str,
+                    homedir: Optional[str] = None, binary_path: Optional[str] = 'gpg') -> str:
         """Encrypt PGP file using public key."""
-        gpg = gnupg.GPG()
+        gpg = gnupg.GPG(gpgbinary=binary_path, gnupghome=homedir)
         key = gpg.import_keys(public_key)
 
         recipient = key.results[0]["fingerprint"]
