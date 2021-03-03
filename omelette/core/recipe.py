@@ -171,7 +171,7 @@ def recipe(func=None, *, is_lambda: bool = False, max_retries: int = None, slack
                 else:
                     return func(_recipe, *args, **kwargs)
             except Exception as e:
-                msg = slack_message_text or f"Omelette: Error running recipe {_recipe.settings.slack.app_name}: {e}"
+                msg = slack_message_text or f"Omelette: Error running recipe {_recipe.settings.slack.app_name}"
                 slack.send_slack_alert(f"{msg}: {e}")
                 raise e
             finally:
