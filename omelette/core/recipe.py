@@ -171,8 +171,8 @@ def recipe(func=None, *, is_lambda: bool = False, max_retries: int = None, slack
                 else:
                     return func(_recipe, *args, **kwargs)
             except Exception as e:
-                msg = slack_message_text or f"Omelette: Error running recipe {_recipe.settings.slack.app_name}"
-                slack.send_slack_alert(f"{msg}: {e}")
+                msg = slack_message_text or f"Error running recipe {_recipe.settings.slack.app_name}"
+                slack.send_slack_alert(f"{msg}:\n {e}")
                 raise e
             finally:
                 Recipe.cleanup()
@@ -231,8 +231,8 @@ def step(func=None, *, max_retries: int = None, slack_alert: bool = False, slack
                 else:
                     return _func(*args, **kwargs)
             except Exception as e:
-                msg = slack_message_text or f"Omelette: Error running step {context.settings.slack.app_name}"
-                slack.send_slack_alert(f"{msg}: {e}")
+                msg = slack_message_text or f"Error running recipe step {context.settings.slack.app_name}"
+                slack.send_slack_alert(f"{msg}:\n {e}")
                 raise e
         else:
             if max_retries:
