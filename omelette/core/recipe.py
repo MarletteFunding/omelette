@@ -153,6 +153,12 @@ def recipe(func=None, *, is_lambda: bool = False, max_retries: int = None, slack
     @wraps(func)
     def wrapper(*args, **kwargs):
         _recipe = Recipe(is_lambda=is_lambda)
+
+        # Reset global to help with lambda shared context and try to reset the global to current instance.
+        if is_lambda:
+            global context
+            context = _recipe
+
         file_dir = os.path.dirname(inspect.getfile(func))
 
         if is_lambda:
