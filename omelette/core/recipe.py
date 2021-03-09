@@ -85,7 +85,7 @@ class Recipe:
                 "--job-name",
                 "-j",
                 help="Name of job in /jobs folder, used for finding configuration.",
-                required=True,
+                required=False if os.getenv("JOB_NAME") else True,
                 default=os.getenv("JOB_NAME")
             )
             self.parse_args()
