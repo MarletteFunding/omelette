@@ -224,26 +224,27 @@ def step(func=None, *, max_retries: int = None, slack_alert: bool = False, slack
     @wraps(func)
     def wrapper(*args, **kwargs):
         _func = func
+        _context = Recipe._instance  # Get latest instance in case of lambda frozen context
 
-        if hasattr(context.job_module, func.__name__):
-            _func = getattr(context.job_module, func.__name__)
+        if hasattr(_context.job_module, func.__name__):
+            _func = getattr(_context.job_module, func.__name__)
 
-        if slack_alert and context.settings.slack.api_token:
-            slack = Slack(**context.settings.slack)
+        if slack_alert and _context.settings.slack.api_token:
+            slack = Slack(**_context.settings.slack)
             try:
                 if max_retries:
-                    return retry(_func, max_retries, *args, **kwargs)
+                    return retry(_func, max_retries, _context, *args, **kwargs)
                 else:
-                    return _func(*args, **kwargs)
+                    return _func(_context, *args, **kwargs)
             except Exception as e:
-                msg = slack_message_text or f"Error running recipe step {context.settings.slack.app_name}"
+                msg = slack_message_text or f"Error running recipe step {_context.settings.slack.app_name}"
                 slack.send_slack_alert(f"{msg}:\n {e}")
                 raise e
         else:
             if max_retries:
-                return retry(_func, max_retries, *args, **kwargs)
+                return retry(_func, max_retries, _context, *args, **kwargs)
             else:
-                return _func(*args, **kwargs)
+                return _func(_context, *args, **kwargs)
     return wrapper
 
 
