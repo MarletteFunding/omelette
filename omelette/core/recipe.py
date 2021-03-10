@@ -61,6 +61,10 @@ class Recipe:
         cls._arg_parser = None
         cls._required_args = None
 
+        # Reset context with fresh Recipe instance for subsequent lambda invocations
+        global context
+        context = cls.get_context()
+
     def parse_args(self):
         self.args = self._arg_parser.parse_args()
 
@@ -167,9 +171,6 @@ def recipe(func=None, *, is_lambda: bool = False, max_retries: int = None, slack
             lambda_context = None
 
         _recipe.init_recipe(file_dir, lambda_event, lambda_context)
-
-        global context
-        context = _recipe
 
         if slack_alert and _recipe.settings.slack.api_token:
             slack = Slack(**_recipe.settings.slack)
