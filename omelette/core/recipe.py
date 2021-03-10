@@ -121,8 +121,15 @@ class Recipe:
 
         return handler
 
+    @classmethod
+    def get_context(cls) -> "Recipe":
+        try:
+            yield cls._instance
+        finally:
+            cls.cleanup()
 
-context = Recipe()
+
+context = Recipe.get_context()
 
 
 def recipe(func=None, *, is_lambda: bool = False, max_retries: int = None, slack_alert: bool = False,
@@ -163,10 +170,6 @@ def recipe(func=None, *, is_lambda: bool = False, max_retries: int = None, slack
             lambda_context = None
 
         _recipe.init_recipe(file_dir, lambda_event, lambda_context)
-
-        # Reset global to help with lambda shared context and try to reset the global to current instance.
-        global context
-        context = _recipe
 
         if slack_alert and context.settings.slack.api_token:
             slack = Slack(**context.settings.slack)
@@ -224,7 +227,7 @@ def step(func=None, *, max_retries: int = None, slack_alert: bool = False, slack
     @wraps(func)
     def wrapper(*args, **kwargs):
         _func = func
-        _context = Recipe._instance  # Get latest instance in case of lambda frozen context
+        _context = Recipe.get_context()  # Get latest instance in case of lambda frozen context
 
         if hasattr(_context.job_module, func.__name__):
             _func = getattr(_context.job_module, func.__name__)
