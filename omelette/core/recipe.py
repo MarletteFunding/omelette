@@ -154,11 +154,6 @@ def recipe(func=None, *, is_lambda: bool = False, max_retries: int = None, slack
     def wrapper(*args, **kwargs):
         _recipe = Recipe(is_lambda=is_lambda)
 
-        # Reset global to help with lambda shared context and try to reset the global to current instance.
-        if is_lambda:
-            global context
-            context = _recipe
-
         file_dir = os.path.dirname(inspect.getfile(func))
 
         if is_lambda:
@@ -168,6 +163,10 @@ def recipe(func=None, *, is_lambda: bool = False, max_retries: int = None, slack
             lambda_context = None
 
         _recipe.init_recipe(file_dir, lambda_event, lambda_context)
+
+        # Reset global to help with lambda shared context and try to reset the global to current instance.
+        global context
+        context = _recipe
 
         if slack_alert and context.settings.slack.api_token:
             slack = Slack(**context.settings.slack)
