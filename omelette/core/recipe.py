@@ -123,10 +123,7 @@ class Recipe:
 
     @classmethod
     def get_context(cls) -> "Recipe":
-        try:
-            yield cls._instance
-        finally:
-            cls.cleanup()
+        return cls._instance
 
 
 context = Recipe.get_context()
