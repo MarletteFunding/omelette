@@ -123,7 +123,7 @@ class Recipe:
 
     @classmethod
     def get_context(cls) -> "Recipe":
-        return cls._instance
+        return cls._instance or Recipe()
 
 
 context = Recipe.get_context()
@@ -168,8 +168,11 @@ def recipe(func=None, *, is_lambda: bool = False, max_retries: int = None, slack
 
         _recipe.init_recipe(file_dir, lambda_event, lambda_context)
 
-        if slack_alert and context.settings.slack.api_token:
-            slack = Slack(**context.settings.slack)
+        global context
+        context = _recipe
+
+        if slack_alert and _recipe.settings.slack.api_token:
+            slack = Slack(**_recipe.settings.slack)
             try:
                 if max_retries:
                     return retry(func, max_retries, _recipe, *args, **kwargs)
