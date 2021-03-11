@@ -1,5 +1,4 @@
 import argparse
-import atexit
 import inspect
 import logging
 import os
@@ -44,9 +43,6 @@ class Recipe:
             cls._arg_parser = argparse.ArgumentParser()
             cls._required_args = cls._arg_parser.add_argument_group('required arguments')
 
-        # To avoid shared context between AWS Lambda invocations, register to explicitly reset cls variables
-        atexit.register(cls.cleanup)
-
         if cls is not Recipe and issubclass(cls, Recipe):
             return super(Recipe, cls).__new__(cls, *args, **kwargs)
         else:
@@ -60,10 +56,6 @@ class Recipe:
         cls._instance = None
         cls._arg_parser = None
         cls._required_args = None
-
-        # Reset context with fresh Recipe instance for subsequent lambda invocations
-        global context
-        context = cls.get_context()
 
     def parse_args(self):
         self.args = self._arg_parser.parse_args()
@@ -127,7 +119,7 @@ class Recipe:
 
     @classmethod
     def get_context(cls) -> "Recipe":
-        return cls._instance or Recipe()
+        return cls._instance or cls()
 
 
 context = Recipe.get_context()
