@@ -14,7 +14,7 @@ class Sftp(pysftp.Connection):
 
     def __init__(self, *, host: str, port: int = 22, username: str, password: Optional[str] = None,
                  private_key: Optional[str] = None, passphrase: Optional[str] = None,
-                 host_fingerprint: Optional[str] = None, auth_timeout: Optional[int] = None):
+                 host_fingerprint: Optional[str] = None, auth_timeout: Optional[int] = None, **kwargs):
         self._cnopts = pysftp.CnOpts()
 
         if private_key:
