@@ -45,7 +45,7 @@ class Sftp(pysftp.Connection):
         self._start_transport(host, port)
         self._transport.use_compression(self._cnopts.compression)
         self._set_authentication(password, private_key, passphrase)
-        self._transport.auth_timeout = auth_timeout
+        self._transport.auth_timeout = auth_timeout or 30
         self._transport.connect(**self._tconnect)
 
         logger.info("Connected to sftp.")
