@@ -21,7 +21,8 @@ class Recipe:
     _arg_parser = None
     _required_args = None
 
-    def __init__(self, is_lambda: bool = False):
+    def __init__(self, args=None, is_lambda: bool = False):
+        self._input_args = args
         self.is_lambda: bool = is_lambda
         self.settings: Settings = settings
         self.job_name: Optional[str] = None
@@ -33,7 +34,7 @@ class Recipe:
         self.logger: Optional[logging.Logger] = None
 
         if type(self) is not Recipe and not self.is_lambda:
-            file_dir = os.path.dirname(sys.argv[0])
+            file_dir = os.path.dirname(inspect.getfile(self.__class__))
             self.init_recipe(file_dir)
 
     def __new__(cls, is_lambda: bool = False, *args, **kwargs):
@@ -58,7 +59,7 @@ class Recipe:
         cls._required_args = None
 
     def parse_args(self):
-        self.args = self._arg_parser.parse_args()
+        self.args = self._arg_parser.parse_args(self._input_args or [])
 
     @classmethod
     def add_argument(cls, *names, **kwargs):

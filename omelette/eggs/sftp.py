@@ -10,7 +10,8 @@ logger = logging.getLogger(__name__)
 
 
 class Sftp(pysftp.Connection):
-    """Wrapper of pysftp.Connection. Handles proper parsing of private keys and host fingerprints."""
+    """Wrapper of pysftp.Connection. Handles proper parsing of private keys and host fingerprints, and also
+    adds additional options for paramiko connection args."""
 
     def __init__(self, *, host: str, port: int = 22, username: str, password: Optional[str] = None,
                  private_key: Optional[str] = None, passphrase: Optional[str] = None,
