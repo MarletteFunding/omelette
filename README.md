@@ -27,12 +27,13 @@ tasks easier by providing common tools for moving data from a given source to a 
 An Egg is a reusable Python module or component. Omelette currently comes with the following Eggs. Since an Egg is just a Python module, it's easy to create your own if 
 you need something not in this list. We are always looking to add more eggs to our basket, so please submit a pull request 
 if you think something would be useful to add! 
-* **File** - Helper functions for common tasks dealing with files, e.g., reading to a string, PGP encryption/decryption
+* **Files** - Helper functions for common tasks dealing with files, e.g., reading to a string, PGP encryption/decryption
 * **SFTP** - Wrapper around PySFTP that makes it a bit easier to work with private keys.
 * **S3** - Wrapper around boto3 S3 client that adds more logging and retry logic to tasks like uploading/downloading files.
 * **SftpS3Interface** - Utility class to move files from S3 to SFTP and vice-versa.
 * **Snowflake** - Wrapper around snowflake.connector that simplifies the API a bit and adds helpful functions like writing query results to files.
 * **Slack** - Wrapper around Slack WebClient that adds retry logic and simplifies posting job alerts to channels. 
+* **Kafka** - Class that allows simple Kafka consuming and publishing. Handles things like building SSL context, and mapping to JSON Schema or Cloudevents specs. 
 
 
 #### Recipes
