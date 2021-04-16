@@ -17,6 +17,8 @@ snowflake-connector-python = "^2.3.3"
 pysftp = "^0.2.9"
 slackclient = "^2.9.3"
 python-gnupg = "^0.4.6"
+kafka-python = "^2.0.2"
+cryptography = "^3.4.7"
 
 [tool.poetry.dev-dependencies]
 
