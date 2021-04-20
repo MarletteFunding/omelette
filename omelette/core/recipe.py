@@ -73,7 +73,7 @@ class Recipe:
             job_name = lambda_event.get("job_name", os.getenv("JOB_NAME"))
 
             if not job_name:
-                raise Exception("Invalid job name: {job_name}. Pass to lambda input or set env var JOB_NAME")
+                raise Exception(f"Invalid job name: {job_name}. Pass to lambda input or set env var JOB_NAME")
 
             self.lambda_event = lambda_event
             self.lambda_context = lambda_context
