@@ -97,7 +97,7 @@ class Recipe:
         self.job_dir = os.path.join(file_dir, f"jobs/{job_name}/")
 
         self.settings.load(config_filepath=self.job_dir + "settings.toml")
-        init_logging(is_lambda=self.is_lambda)
+        init_logging(is_lambda=self.is_lambda, loggers=self.settings.get("loggers"))
         self.logger = logging.getLogger("__main__")
 
         if os.path.exists(self.job_dir + f"{job_name}.py"):
