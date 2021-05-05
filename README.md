@@ -247,3 +247,14 @@ Serverless.yml is the master container for all deployment artifacts, but we pack
 with each recipe so that code + infrastructure are close together and always easy to find. It makes it easier to modify deployment
 settings too when each recipe is isolated. 
 
+### Contributing:
+* Make your changes locally
+* Increment the version number in pyproject.toml
+* Commit & push changes to Github, open PR, merge to master after approval
+* Create a new release in Github, tagging it with the same version number in pyproject.toml
+* Releases can be installed specifically by Poetry by settings the `rev` tag in pyproject.toml for omelette, e.g.:
+  ```
+  [tool.poetry.dependencies]
+  python = "^3.7"
+  data-utils = {git = "https://github.com/MarletteFunding/omelette", rev = "0.1.5"}
+  ```
