@@ -195,7 +195,7 @@ or
 
 #### Initialize a new Omelette Project
 `omelette init` will set up a new project in the current directory. This should be run from within a new, empty directory
-and will generate all required files.
+and will generate all required files. (Note that this is still in progress and does not currently generate any files)
 ```
 $ omelette init
 ? What is the name of your omelette (project)? my_project
@@ -205,6 +205,7 @@ $ omelette init
 #### Add a Recipe
 `omelette add-recipe` will ask you a few questions and set up a new recipe based on your answers. Currently it supports
 AWS Fargate (Docker) or AWS Lambda tasks. It will generate all recipe files and add a sample recipe that you can either customize or overwrite.
+(Note that this is still in progress and does not currently generate any files)
 
 ```
 $ omelette add-recipe
