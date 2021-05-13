@@ -1,0 +1,25 @@
+service: datateam-{{cookiecutter.git_repo_name}}
+
+provider:
+  name: aws
+    runtime: python3.8
+    ####################### START REQUIRED ######################################
+    variableSyntax: "\\${((?!AWS)[ ~:a-zA-Z0-9._@'\",\\-\\/\\(\\)]+?)}" # This is needed to help make CloudFormation a bit more readable https://serverless.com/framework/docs/providers/aws/guide/variables/#using-custom-variable-syntax
+    ####################### END REQUIRED ########################################
+    stage: ${opt:stage, 'sbx'}
+    region: us-east-1
+    deploymentBucket:
+      name: mf-serverless
+    environment:
+      PROJECT_ENV: ${self:provider.stage}
+    ecr:
+      images:
+        baseImage:
+          path: ./
+    iamRoleStatements:
+      - Effect: Allow
+        Action:
+          - iam:PassRole
+        Resource: !Sub arn:aws:iam::${AWS::AccountId}:role/${self:service}-${self:provider.stage}-${AWS::Region}
+
+custom:

@@ -1,12 +1,11 @@
 from typing import Dict, Any
 
-from omelette import Recipe, context, step, recipe, settings
+from omelette import Recipe, step, recipe
 
 
 @step(max_retries=2, slack_alert=True, slack_message_text="Failed at step 'add'")
-def add(first: int, second: int):
-    # Access global settings & context objects: `from omelette import context, settings`:
-    example = settings.example
+def add(context: Recipe, first: int, second: int):
+    example = context.settings.example
     context.logger.debug(example)
 
     one = plus_one(first)
@@ -21,23 +20,23 @@ def plus_one(x: int):
 
 # Add `is_lambda=True` so it properly handles AWS event & context, and initializes logging for Lambda execution
 @recipe(is_lambda=True, slack_alert=True, max_retries=3)
-def handle(_context: Recipe, aws_event: Dict[Any, Any], aws_context: Dict[Any, Any]):
-    # Access logger with _context.logger, or initialize in your file with logging.getLogger(__name__)
-    _context.logger.info(f"Running {_context.job_name}")
+def handle(context: Recipe, aws_event: Dict[Any, Any], aws_context: Dict[Any, Any]):
+    # Access logger with context.logger, or initialize in your file with logging.getLogger(__name__)
+    context.logger.info(f"Running {context.job_name}")
 
-    # Access settings object (variables from settings.toml) with _context
-    example = _context.settings.example
-    _context.logger.debug(example)
+    # Access settings object (variables from settings.toml) with context
+    example = context.settings.example
+    context.logger.debug(example)
 
     # Access AWS Lambda event & context from arguments:
     print(aws_event)
     print(aws_context)
 
-    # Or from _context
-    print(_context.lambda_event)
-    print(_context.lambda_context)
+    # Or from context
+    print(context.lambda_event)
+    print(context.lambda_context)
 
-    return add(_context.args.first, _context.args.second)
+    return add(context.args.first, context.args.second)
 
 
 if __name__ == "__main__":

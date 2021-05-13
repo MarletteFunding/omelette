@@ -32,7 +32,7 @@ class Kafka:
         self.auto_offset_reset = auto_offset_reset
         self.ssl_context = self.get_ssl_context() if self.security_protocol == "SSL" else None
         self.consumer: Optional[KafkaConsumer] = None
-        self.producer: Optional[KafkaProducer] = self.get_producer()
+        self._producer: Optional[KafkaProducer] = None
 
     def get_consumer(self, topic: str, group_id: str) -> KafkaConsumer:
         self.consumer = KafkaConsumer(
@@ -45,14 +45,14 @@ class Kafka:
         )
         return self.consumer
 
-    def get_producer(self) -> KafkaProducer:
-        if self.producer:
-            return self.producer
-        else:
-            return KafkaProducer(bootstrap_servers=self.bootstrap_servers,
-                                 security_protocol=self.security_protocol,
-                                 ssl_context=self.ssl_context,
-                                 value_serializer=lambda v: json.dumps(v).encode('utf-8'))
+    @property
+    def producer(self) -> KafkaProducer:
+        if not self._producer:
+            self._producer = KafkaProducer(bootstrap_servers=self.bootstrap_servers,
+                                           security_protocol=self.security_protocol,
+                                           ssl_context=self.ssl_context,
+                                           value_serializer=lambda v: json.dumps(v).encode('utf-8'))
+        return self._producer
 
     def send_message(self, topic: str, value: Dict[str, Any], key: Optional[Dict[str, Any]] = None,
                      spec: Optional[KafkaMessageSpecEnum] = KafkaMessageSpecEnum.NONE, message_type: Optional[str] = None,
@@ -96,7 +96,7 @@ class Kafka:
     @staticmethod
     def map_to_cloudevents(message: Dict[Any, Any], message_type: str) -> Dict[Any, Any]:
         return {
-            "id": uuid4(),
+            "id": str(uuid4()),
             "source": "/omelette/kafka",
             "subject": None,
             "specversion": "1.0",

@@ -195,22 +195,24 @@ or
 
 #### Initialize a new Omelette Project
 `omelette init` will set up a new project in the current directory. This should be run from within a new, empty directory
-and will generate all required files. (Note that this is still in progress and does not currently generate any files)
+and will generate all required files. If you choose to use Serverless for deployment, it will add a serverless.yml file.
 ```
 $ omelette init
-? What is the name of your omelette (project)? my_project
-🍳 Cooking omelette my_project
+? What is the name of your omelette (my_project)? snowflake_etl
+? Deploy using Serverless framework? Yes
+🍳 Cooking omelette snowflake_etl
+🍳 Omelette snowflake_etl finished!
 ```
 
 #### Add a Recipe
 `omelette add-recipe` will ask you a few questions and set up a new recipe based on your answers. Currently it supports
 AWS Fargate (Docker) or AWS Lambda tasks. It will generate all recipe files and add a sample recipe that you can either customize or overwrite.
-(Note that this is still in progress and does not currently generate any files)
 
 ```
 $ omelette add-recipe
 ? What is the name of your recipe? snowflake_to_s3
-? Could your recipe ever take longer than 15 minutes to run? No
+? Should this recipe use functions or a class (OOP)? Functional
+? Could your recipe ever take longer than 15 minutes to run? Yes
 ? Could your recipe ever need more than 3 GB memory? Yes
 ? Could your recipe ever need more than 0.5 GB disk space? Yes
 
@@ -219,27 +221,19 @@ Based on your answers, we recommend going with AWS Fargate.
 ? How should we launch your recipe? Schedule
 ? How often should your recipe run (either cron or rate type)? rate(1 day)
 🍳 Crafting recipe: snowflake_to_s3
+    Programming style: Functional
     Recipe type: AWS Fargate
     Recipe trigger: Schedule
     Trigger details: rate(1 day)
 ? Confirm everything looks good? Yes
 🍳 Great! Cooking recipe...
-Created recipe!
+Recipe created! Goodbye!
 ```
-
-#### Delete a Recipe
-Coming Soon
-
-#### Add a Job to a Recipe
-Coming Soon
-
-#### Delete a Job from a Recipe
-Coming Soon
 
 ### Deployment
 
 Omelette uses the [Serverless Framework](https://www.serverless.com/) for deployment. Using the CLI will automatically
-update the [serverless.yml](serverless.yml) file and add either a new `function` for AWS Lambda recipes, or a `step_functions` state machine
+update the [serverless.yml](serverless.yml) file (still in development) and add either a new `function` for AWS Lambda recipes, or a `step_functions` state machine
 for AWS Fargate tasks. We use AWS Step Functions to run Fargate tasks instead of ECS Scheduled Tasks, mainly because of its ability to retry jobs, catch errors, 
 and integrate with other services. By default we set up an error state that can be configured to call a Lambda that sends an alert, e.g. to Slack,
 and we set the retry count to 2. 

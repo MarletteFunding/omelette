@@ -1,0 +1,14 @@
+[default]
+    [default.slack]
+    app_name = "Example"
+    api_token = "ssm:/etl/slack-api-token"
+
+[local]
+    [local.slack]
+    enabled = false
+
+[sbx]
+
+[uat]
+
+[prd]
