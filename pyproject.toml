@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "omelette"
-version = "0.1.6"
+version = "0.1.7"
 description = "Serverless Python ETL, Made  ̶O̶v̶e̶r̶ Easy"
 authors = ["Ryan Whitten <ryan.whitten@bestegg.com>"]
 readme = "README.md"

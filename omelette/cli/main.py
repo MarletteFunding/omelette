@@ -13,7 +13,7 @@ app = typer.Typer()
 
 
 def get_omelette_version():
-    with open(os.path.join(os.path.dirname(__file__), "../../pyproject.toml"), "r") as f:
+    with open(os.path.join(os.path.dirname(os.path.dirname(__file__)), "pyproject.toml"), "r") as f:
         data = parse(f.read())
 
     return data["tool"]["poetry"]["version"]
@@ -34,6 +34,7 @@ def init():
                  })
     if not use_sls:
         os.remove(f"./{project_name}/serverless.yml")
+        os.remove(f"./{project_name}/package.json")
 
     typer.echo(f"🍳 Omelette {project_name} finished!")
 
