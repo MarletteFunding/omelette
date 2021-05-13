@@ -23,7 +23,7 @@ def get_omelette_version():
 def init():
     project_name = questionary.text("What is the name of your omelette (my_project)?", validate=lambda text: validate_underscore_name(text)).unsafe_ask()
     use_sls = questionary.confirm("Deploy using Serverless framework?", default=True).ask()
-    omelette_version = get_omelette_version()
+    omelette_version = "0.1.8"  # TODO: figure out how to set this dynamically somewhere other than pyproject.toml
     typer.echo(f"🍳 Cooking omelette {project_name}")
     cookiecutter(os.path.join(os.path.dirname(__file__), "templates/project/"),
                  no_input=True,
