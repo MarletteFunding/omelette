@@ -21,11 +21,10 @@ class Sftp(pysftp.Connection):
         if private_key:
             private_key = pysftp.RSAKey.from_private_key(StringIO(private_key), passphrase)
 
-        # Add host key when not on local, where it can be stored in /.ssh/known_hosts.
-        if os.getenv("PROJECT_ENV", "local") != "local":
-            fingerprint = host_fingerprint.encode()
-            host_key = pysftp.RSAKey(data=decodebytes(fingerprint))
-            self._cnopts.hostkeys.add(host, 'ssh-rsa', host_key)
+        # Add host key
+        fingerprint = host_fingerprint.encode()
+        host_key = pysftp.RSAKey(data=decodebytes(fingerprint))
+        self._cnopts.hostkeys.add(host, 'ssh-rsa', host_key)
 
         # starting point for transport.connect options
         self._host = host
