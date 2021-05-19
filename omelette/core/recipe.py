@@ -21,8 +21,8 @@ class Recipe:
     _arg_parser = None
     _required_args = None
 
-    def __init__(self, args=None, is_lambda: bool = False):
-        self._input_args = args
+    def __init__(self, is_lambda: bool = False):
+        self._input_args = sys.argv[1:]
         self.is_lambda: bool = is_lambda
         self.settings: Settings = settings
         self.job_name: Optional[str] = None
